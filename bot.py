@@ -19,13 +19,12 @@ def keep_alive():
     t.start()
 
 # 2. كود البوت حقك
-# الكود بيقرا التوكنات من Render تلقائي
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 # تفعيل Gemini
 genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel('gemini-1.5-flash') # غيرت هنا بس
+model = genai.GenerativeModel('gemini-1.5-flash-latest') # غيرت الاسم هنا
 
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
 
@@ -45,5 +44,5 @@ def handle_message(message):
         bot.reply_to(message, f"صار خطأ: {e}")
 
 print("البوت شغال...")
-keep_alive()  # شغل السيرفر الوهمي
+keep_alive()
 bot.polling(none_stop=True)
