@@ -1,10 +1,10 @@
 from flask import Flask
 from threading import Thread
 import telebot
-import google.generativeai as genai
+from openai import OpenAI
 import os
 
-# 1. السيرفر الوهمي عشان Render ما يفصل
+# 1. السيرفر الوهمي
 app = Flask('')
 
 @app.route('/')
@@ -18,13 +18,11 @@ def keep_alive():
     t = Thread(target=run)
     t.start()
 
-# 2. كود البوت حقك
+# 2. كود البوت
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+DEEPSEEK_API_KEY = os.getenv("GEMINI_API_KEY") # بنستخدم نفس المتغير عشان ما نغير في Render
 
-# تفعيل Gemini
-genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel('gemini-1.5-flash-latest') # غيرت الاسم هنا
+client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url="https://api.deepseek.com")
 
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
 
@@ -34,12 +32,15 @@ def send_welcome(message):
 
 @bot.message_handler(func=lambda message: True)
 def handle_message(message):
-    prompt = f"انت بوت مبرمج محترف. جاوب بالكود المطلوب واشرحه ببساطة بالعربي. لو فيه خطأ صلحه. سؤال المستخدم: {message.text}"
-    
+    prompt = f"انت بوت مبرمج محترف. جاوب بالكود المطلوب واشرحه ببساطة بالعربي. سؤال: {message.text}"
+
     bot.send_chat_action(message.chat.id, 'typing')
     try:
-        response = model.generate_content(prompt)
-        bot.reply_to(message, response.text)
+        response = client.chat.completions.create(
+            model="deepseek-chat",
+            messages=[{"role": "user", "content": prompt}]
+        )
+        bot.reply_to(message, response.choices[0].message.content)
     except Exception as e:
         bot.reply_to(message, f"صار خطأ: {e}")
 
