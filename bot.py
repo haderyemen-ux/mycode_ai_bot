@@ -1,7 +1,24 @@
+from flask import Flask
+from threading import Thread
 import telebot
 import google.generativeai as genai
 import os
 
+# 1. السيرفر الوهمي عشان Render ما يفصل
+app = Flask('')
+
+@app.route('/')
+def home():
+    return "Bot is alive!"
+
+def run():
+  app.run(host='0.0.0.0', port=10000)
+
+def keep_alive():
+    t = Thread(target=run)
+    t.start()
+
+# 2. كود البوت حقك
 # الكود بيقرا التوكنات من Render تلقائي
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
@@ -28,4 +45,5 @@ def handle_message(message):
         bot.reply_to(message, f"صار خطأ: {e}")
 
 print("البوت شغال...")
+keep_alive()  # شغل السيرفر الوهمي
 bot.polling(none_stop=True)
