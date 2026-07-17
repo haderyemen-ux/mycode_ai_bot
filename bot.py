@@ -4,7 +4,7 @@ import telebot
 from openai import OpenAI
 import os
 
-# 1. السيرفر الوهمي
+# 1. السيرفر الوهمي عشان Render ما يطفيه
 app = Flask('')
 
 @app.route('/')
@@ -20,8 +20,9 @@ def keep_alive():
 
 # 2. كود البوت
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
-DEEPSEEK_API_KEY = os.getenv("GEMINI_API_KEY") # بنستخدم نفس المتغير عشان ما نغير في Render
+DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY") # عدلناه من GEMINI_API_KEY
 
+# اتصال DeepSeek
 client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url="https://api.deepseek.com")
 
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
