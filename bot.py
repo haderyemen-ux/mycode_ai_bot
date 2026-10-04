@@ -11,6 +11,10 @@ import telebot
 from google import genai
 from google.genai import types
 
+# -----------------------------------------------------------------------------
+# My Code Bot — production-oriented Telegram + Gemini webhook service
+# -----------------------------------------------------------------------------
+
 logging.basicConfig(
     level=os.getenv("LOG_LEVEL", "INFO").upper(),
     format="%(asctime)s | %(levelname)s | %(message)s",
@@ -28,9 +32,7 @@ MAX_HISTORY = int(os.getenv("MAX_HISTORY", "12"))
 MAX_OUTPUT_TOKENS = int(os.getenv("MAX_OUTPUT_TOKENS", "4096"))
 TEMPERATURE = float(os.getenv("TEMPERATURE", "0.25"))
 MODEL_CANDIDATES = [
-    x.strip() for x in os.getenv(
-        "GEMINI_MODELS", "gemini-3.8-flash,gemini-2.5-flash"
-    ).split(",") if x.strip()
+    x.strip() for x in os.getenv("GEMINI_MODELS", "gemini-3.8-flash,gemini-2.5-flash").split(",") if x.strip()
 ]
 
 WELCOME = "هلا! انا بوت الكود الذكي 🤖\nارسل لي ايش تبغى اكتب لك كود"
@@ -61,6 +63,9 @@ SYSTEM_PROMPT = """
 """.strip()
 
 app = Flask(__name__)
+
+# In-process conversation memory. Render Free has an ephemeral filesystem, so
+# this intentionally stays simple and does not pretend to be durable storage.
 history: Dict[int, Deque[dict]] = defaultdict(lambda: deque(maxlen=MAX_HISTORY))
 locks: Dict[int, threading.Lock] = defaultdict(threading.Lock)
 
@@ -91,6 +96,7 @@ def telegram_api(method: str, payload: dict) -> dict:
 
 
 def split_message(text: str, limit: int = 4000) -> List[str]:
+    """Split long Telegram messages without sending beyond Telegram's limit."""
     text = (text or "").strip()
     if not text:
         return ["لم يصلني نص من Gemini."]
@@ -116,8 +122,13 @@ def split_message(text: str, limit: int = 4000) -> List[str]:
     return chunks
 
 
+def format_history(chat_id: int) -> List[dict]:
+    """Return a compact role/text history suitable for the Gemini API."""
+    return list(history[chat_id])
+
+
 def make_prompt(chat_id: int, new_text: str) -> str:
-    prior = list(history[chat_id])
+    prior = format_history(chat_id)
     if not prior:
         return new_text
 
@@ -147,7 +158,7 @@ def generate_with_fallback(prompt: str) -> str:
             if text:
                 return text
             raise RuntimeError("Gemini returned an empty response")
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 - fall through to the next model
             last_error = exc
             logger.exception("Gemini generation failed for model=%s", model)
     raise RuntimeError(f"Gemini request failed: {last_error}")
@@ -186,8 +197,8 @@ def ping_handler(message):
 
 @bot.message_handler(content_types=["text"])
 def text_handler(message):
-    user_text = (message.text or "").strip()
-    if not user_text:
+    text = (message.text or "").strip()
+    if not text:
         return
 
     chat_id = message.chat.id
@@ -198,12 +209,12 @@ def text_handler(message):
 
     try:
         bot.send_chat_action(chat_id, "typing")
-        prompt = make_prompt(chat_id, user_text)
+        prompt = make_prompt(chat_id, text)
         answer = generate_with_fallback(prompt)
-        history[chat_id].append({"role": "user", "text": user_text})
+        history[chat_id].append({"role": "user", "text": text})
         history[chat_id].append({"role": "model", "text": answer})
         safe_reply(chat_id, answer)
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
         logger.exception("Message handling failed")
         safe_reply(
             chat_id,
@@ -216,6 +227,7 @@ def text_handler(message):
 
 
 def configure_bot() -> None:
+    """Configure webhook + commands when a public URL is available."""
     telegram_api(
         "setMyCommands",
         {
@@ -272,10 +284,13 @@ def telegram_webhook():
 
     try:
         update = telebot.types.Update.de_json(request.data.decode("utf-8"))
+        # Return HTTP 200 immediately; TeleBot handles the update in its worker pool.
+        # This prevents Telegram retries while Gemini is generating a response.
         bot.process_new_updates([update])
         return jsonify({"ok": True})
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
         logger.exception("Webhook processing failed")
+        # Telegram should not receive a 5xx loop for malformed/duplicate updates.
         return jsonify({"ok": False, "error": type(exc).__name__}), 200
 
 
@@ -285,11 +300,19 @@ def log_requests():
         logger.info("%s %s", request.method, request.path)
 
 
+# Register webhook when Gunicorn imports this module. If a Render deploy is
+# starting before RENDER_EXTERNAL_URL is available, setting PUBLIC_BASE_URL in
+# the dashboard guarantees registration.
 try:
     configure_bot()
-except Exception:
+except Exception:  # noqa: BLE001
     logger.exception("Startup configuration failed. The HTTP service will still start.")
 
 
 if __name__ == "__main__":
+    # Local development mode. For Render use Gunicorn (see render.yaml).
+    if PUBLIC_BASE_URL:
+        logger.info("Running Flask development server with webhook mode")
+    else:
+        logger.info("Running Flask development server without webhook registration")
     app.run(host="0.0.0.0", port=PORT, debug=False)
