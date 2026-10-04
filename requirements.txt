@@ -1,3 +1,5 @@
-Flask
-pyTelegramBotAPI
-openai
+Flask>=3.1,<4
+pyTelegramBotAPI>=4.29,<5
+google-genai>=1.0,<2
+requests>=2.32,<3
+gunicorn>=23,<24
