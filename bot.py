@@ -35,16 +35,27 @@ def env_value(*names: str) -> str:
 
 def build_telegram_token() -> tuple[str, str]:
     """
-    Build the real Telegram token.
+    Build the Telegram token without ever requiring ':' in a Render Key.
 
-    Preferred Render setup avoids ':' in dashboard values:
-      BOT_ID     = part before ':'
-      BOT_SECRET = part after ':'
+    Render Key fields must not contain ':'. Therefore the recommended setup is:
+      TELEGRAM_BOT_ID     = everything before ':' from BotFather
+      TELEGRAM_BOT_SECRET = everything after ':' from BotFather
 
-    A full TELEGRAM_TOKEN is still supported for environments that allow it.
+    The application reconstructs the exact Telegram token internally.
+    A full TELEGRAM_TOKEN is accepted only as a backward-compatible fallback.
     """
-    bot_id = env_value("BOT_ID", "TELEGRAM_BOT_ID", "TELEGRAM_ID", "Telegram_ID")
-    bot_secret = env_value("BOT_SECRET", "TELEGRAM_BOT_SECRET", "TELEGRAM_SECRET", "Telegram_SECRET")
+    bot_id = env_value(
+        "TELEGRAM_BOT_ID",
+        "BOT_ID",
+        "TELEGRAM_ID",
+        "Telegram_ID",
+    )
+    bot_secret = env_value(
+        "TELEGRAM_BOT_SECRET",
+        "BOT_SECRET",
+        "TELEGRAM_SECRET",
+        "Telegram_SECRET",
+    )
 
     if bot_id or bot_secret:
         return f"{bot_id}:{bot_secret}", "split"
@@ -123,16 +134,21 @@ def require_config() -> None:
 
     if not telegram_token_format_ok(TELEGRAM_TOKEN):
         raise RuntimeError(
-            "Invalid Telegram token format. "
-            "Use BOT_ID and BOT_SECRET separately; "
-            "the application will restore ':' automatically."
+            "Invalid Telegram token configuration. "
+            "In Render use two Keys only: "
+            "TELEGRAM_BOT_ID (digits before ':') and "
+            "TELEGRAM_BOT_SECRET (text after ':'). "
+            "Do not put ':' in either Key."
         )
 
 
 logger.info(
-    "Configuration check: telegram_source=%s telegram_format=%s gemini_configured=%s",
+    "Configuration check: telegram_source=%s telegram_format_valid=%s "
+    "telegram_id_digits=%s telegram_secret_present=%s gemini_configured=%s",
     TELEGRAM_TOKEN_SOURCE,
     telegram_token_format_ok(TELEGRAM_TOKEN),
+    TELEGRAM_TOKEN.split(":", 1)[0].isdigit() if ":" in TELEGRAM_TOKEN else False,
+    bool(TELEGRAM_TOKEN.split(":", 1)[1]) if ":" in TELEGRAM_TOKEN else False,
     bool(GEMINI_API_KEY),
 )
 
