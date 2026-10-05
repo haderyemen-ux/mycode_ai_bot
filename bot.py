@@ -1,3 +1,5 @@
+import base64
+import binascii
 import logging
 import os
 import threading
@@ -33,30 +35,63 @@ def env_value(*names: str) -> str:
     return ""
 
 
+def decode_base64_secret(value: str) -> str:
+    """Decode a Base64-encoded UTF-8 secret without logging its contents."""
+    if not value:
+        return ""
+    try:
+        raw = base64.b64decode(value.strip(), validate=True)
+        return raw.decode("utf-8").strip()
+    except (binascii.Error, UnicodeDecodeError):
+        return ""
+
+
 def build_telegram_token() -> tuple[str, str]:
     """
-    Build the Telegram token without ever requiring ':' in a Render Key.
+    Build the Telegram bot token internally.
 
-    Render Key fields must not contain ':'. Therefore the recommended setup is:
-      TELEGRAM_BOT_ID     = everything before ':' from BotFather
-      TELEGRAM_BOT_SECRET = everything after ':' from BotFather
+    Preferred Render setup:
+      TELEGRAM_BOT_TOKEN_B64 = Base64(full Telegram token)
 
-    The application reconstructs the exact Telegram token internally.
-    A full TELEGRAM_TOKEN is accepted only as a backward-compatible fallback.
+    This avoids putting ':' or other token punctuation into a Render value.
+    The decoded value must be the exact token issued by @BotFather:
+      <numeric_bot_id>:<secret>
+
+    Backward-compatible alternatives:
+      TELEGRAM_BOT_ID + TELEGRAM_BOT_SECRET
+      TELEGRAM_BOT_ID + TELEGRAM_BOT_SECRET_B64
+      TELEGRAM_TOKEN (full token)
     """
+    encoded_token = env_value(
+        "TELEGRAM_BOT_TOKEN_B64",
+        "BOT_TOKEN_B64",
+        "TELEGRAM_TOKEN_B64",
+    )
+    if encoded_token:
+        decoded = decode_base64_secret(encoded_token)
+        return decoded, "base64"
+
     bot_id = env_value(
         "TELEGRAM_BOT_ID",
         "BOT_ID",
         "TELEGRAM_ID",
         "Telegram_ID",
     )
+    encoded_secret = env_value(
+        "TELEGRAM_BOT_SECRET_B64",
+        "BOT_SECRET_B64",
+        "TELEGRAM_SECRET_B64",
+    )
+    if bot_id and encoded_secret:
+        secret = decode_base64_secret(encoded_secret)
+        return f"{bot_id}:{secret}", "split-base64"
+
     bot_secret = env_value(
         "TELEGRAM_BOT_SECRET",
         "BOT_SECRET",
         "TELEGRAM_SECRET",
         "Telegram_SECRET",
     )
-
     if bot_id or bot_secret:
         return f"{bot_id}:{bot_secret}", "split"
 
@@ -65,7 +100,6 @@ def build_telegram_token() -> tuple[str, str]:
         return full_token, "full"
 
     return "", "missing"
-
 
 TELEGRAM_TOKEN, TELEGRAM_TOKEN_SOURCE = build_telegram_token()
 GEMINI_API_KEY = env_value("GEMINI_API_KEY", "Gemini", "GEMINI")
@@ -124,23 +158,20 @@ def telegram_token_format_ok(token: str) -> bool:
 
 
 def require_config() -> None:
-    missing = []
     if not TELEGRAM_TOKEN:
-        missing.append("BOT_ID + BOT_SECRET")
+        raise RuntimeError(
+            "Telegram token is missing. In Render use TELEGRAM_BOT_TOKEN_B64 "
+            "(Base64 of the complete BotFather token)."
+        )
     if not GEMINI_API_KEY:
-        missing.append("GEMINI_API_KEY")
-    if missing:
-        raise RuntimeError("Missing required configuration: " + ", ".join(missing))
+        raise RuntimeError("GEMINI_API_KEY is missing.")
 
     if not telegram_token_format_ok(TELEGRAM_TOKEN):
         raise RuntimeError(
-            "Invalid Telegram token configuration. "
-            "In Render use two Keys only: "
-            "TELEGRAM_BOT_ID (digits before ':') and "
-            "TELEGRAM_BOT_SECRET (text after ':'). "
-            "Do not put ':' in either Key."
+            "Telegram token is invalid. TELEGRAM_BOT_ID alone is NOT a bot token. "
+            "Use TELEGRAM_BOT_TOKEN_B64 with the complete BotFather token encoded "
+            "as Base64, or use TELEGRAM_BOT_ID + TELEGRAM_BOT_SECRET."
         )
-
 
 logger.info(
     "Configuration check: telegram_source=%s telegram_format_valid=%s "
