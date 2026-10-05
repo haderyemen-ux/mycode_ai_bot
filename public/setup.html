@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>My Code Bot — Netlify Setup</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;background:#07111f;color:#eef5ff;font-family:Tahoma,Arial,sans-serif}
+    main{max-width:680px;margin:auto;padding:40px 20px}.card{background:#0e1c30;border:1px solid #1d3556;border-radius:20px;padding:24px}
+    h1{margin-top:0}.muted{color:#9eb2cc;line-height:1.8}label{display:block;margin:20px 0 8px}
+    input,button{width:100%;padding:13px;border-radius:10px;border:1px solid #294667;background:#07111f;color:#eef5ff}
+    button{margin-top:16px;background:#63a4ff;color:#04101f;font-weight:700;cursor:pointer}.status{margin-top:18px;white-space:pre-wrap;word-break:break-word}
+    code{background:#07111f;padding:3px 7px;border-radius:7px}
+  </style>
+</head>
+<body>
+<main>
+  <div class="card">
+    <h1>إعداد My Code Bot</h1>
+    <p class="muted">أدخل قيمة <code>SETUP_SECRET</code> التي وضعتها في Netlify. لن تظهر مفاتيح Telegram أو Gemini هنا.</p>
+    <label for="key">Setup Secret</label>
+    <input id="key" type="password" autocomplete="off" placeholder="أدخل قيمة SETUP_SECRET">
+    <button id="go">تسجيل Webhook وتشغيل الأوامر</button>
+    <div id="status" class="status"></div>
+  </div>
+</main>
+<script>
+const key=document.getElementById("key"), status=document.getElementById("status"), button=document.getElementById("go");
+button.addEventListener("click", async ()=>{
+  const value=key.value.trim();
+  if(!value){status.textContent="أدخل SETUP_SECRET أولاً.";return;}
+  button.disabled=true; status.textContent="جارٍ إعداد Webhook...";
+  try{
+    const r=await fetch("/setup",{headers:{"x-setup-key":value}});
+    const data=await r.json();
+    status.textContent=JSON.stringify(data,null,2);
+  }catch(e){status.textContent="تعذر الاتصال: "+e.message;}
+  finally{button.disabled=false;}
+});
+</script>
+</body>
+</html>
