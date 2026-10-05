@@ -222,7 +222,8 @@ export default async (req) => {
 
   if (path === "/setup" && req.method === "GET") {
     if (!SETUP_SECRET) return json({ ok: false, error: "SETUP_SECRET is not configured" }, 503);
-    if (url.searchParams.get("key") !== SETUP_SECRET) return json({ ok: false, error: "Unauthorized" }, 401);
+    const suppliedKey = req.headers.get("x-setup-key") || url.searchParams.get("key") || "";
+    if (suppliedKey !== SETUP_SECRET) return json({ ok: false, error: "Unauthorized" }, 401);
     try {
       const result = await setupWebhook();
       return json({ ok: true, message: "Telegram webhook configured", ...result });
