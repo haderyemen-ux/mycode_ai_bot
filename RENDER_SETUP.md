@@ -5,7 +5,7 @@
 Use one Render environment variable:
 
 - Key: `TELEGRAM_BOT_TOKEN_B64`
-- Value: the Base64 encoding of the complete BotFather token.
+- Value: the URL-safe, unpadded Base64 encoding of the complete BotFather token.
 
 Do not put the Telegram token into `TELEGRAM_BOT_ID` alone. The numeric bot ID is only the part before the colon; Telegram authentication requires the complete token in the form `<id>:<secret>`.
 
@@ -15,7 +15,7 @@ Run this locally on your own computer. Never paste the real token into GitHub.
 
 ```powershell
 $token = 'PASTE_YOUR_COMPLETE_BOTFATHER_TOKEN_HERE'
-[Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($token))
+[Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($token)).TrimEnd('=').Replace('+','-').Replace('/','_')
 ```
 
 Copy only the Base64 output into Render:
