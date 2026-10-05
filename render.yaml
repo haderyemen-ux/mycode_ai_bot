@@ -9,16 +9,14 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.11
-      - key: TELEGRAM_BOT_ID
-        sync: false
-      - key: TELEGRAM_BOT_SECRET
+      - key: TELEGRAM_BOT_TOKEN_B64
         sync: false
       - key: GEMINI_API_KEY
         sync: false
       - key: TELEGRAM_WEBHOOK_SECRET
         generateValue: true
       - key: GEMINI_MODELS
-        value: gemini-3.8-flash,gemini-3.7-flash,gemini-2.5-flash
+        value: gemini-2.5-flash,gemini-3.7-flash,gemini-3.8-flash
       - key: MAX_HISTORY
         value: "12"
       - key: MAX_OUTPUT_TOKENS
