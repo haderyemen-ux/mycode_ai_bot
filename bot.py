@@ -36,11 +36,13 @@ def env_value(*names: str) -> str:
 
 
 def decode_base64_secret(value: str) -> str:
-    """Decode a Base64-encoded UTF-8 secret without logging its contents."""
+    """Decode URL-safe Base64 (padding may be omitted) without logging the secret."""
     if not value:
         return ""
     try:
-        raw = base64.b64decode(value.strip(), validate=True)
+        encoded = value.strip().replace("-", "+").replace("_", "/")
+        encoded += "=" * (-len(encoded) % 4)
+        raw = base64.b64decode(encoded, validate=True)
         return raw.decode("utf-8").strip()
     except (binascii.Error, UnicodeDecodeError):
         return ""
@@ -53,7 +55,7 @@ def build_telegram_token() -> tuple[str, str]:
     Preferred Render setup:
       TELEGRAM_BOT_TOKEN_B64 = Base64(full Telegram token)
 
-    This avoids putting ':' or other token punctuation into a Render value.
+    This avoids putting ':' or other Telegram token punctuation into a Render value.
     The decoded value must be the exact token issued by @BotFather:
       <numeric_bot_id>:<secret>
 
