@@ -8,7 +8,7 @@ This repository includes a dedicated Netlify Functions implementation in:
 
 `netlify/functions/bot.mjs`
 
-Netlify serves the static status page from `index.html`.
+Netlify serves the static status page from `public/index.html`.
 
 ### Required Netlify Environment Variables
 
