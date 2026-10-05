@@ -22,8 +22,8 @@ logging.basicConfig(
 logger = logging.getLogger("mycode_bot")
 
 BOT_NAME = "My Code Bot"
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN", "").strip()
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
+TELEGRAM_TOKEN = (os.getenv("TELEGRAM_TOKEN") or os.getenv("Telegram") or os.getenv("TELEGRAM") or "").strip()
+GEMINI_API_KEY = (os.getenv("GEMINI_API_KEY") or os.getenv("Gemini") or os.getenv("GEMINI") or "").strip()
 PUBLIC_BASE_URL = (os.getenv("PUBLIC_BASE_URL") or os.getenv("RENDER_EXTERNAL_URL") or "").rstrip("/")
 WEBHOOK_PATH = os.getenv("WEBHOOK_PATH", "/telegram/webhook").strip() or "/telegram/webhook"
 WEBHOOK_SECRET = os.getenv("TELEGRAM_WEBHOOK_SECRET", "").strip()
