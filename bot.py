@@ -22,8 +22,42 @@ logging.basicConfig(
 logger = logging.getLogger("mycode_bot")
 
 BOT_NAME = "My Code Bot"
-TELEGRAM_TOKEN = (os.getenv("TELEGRAM_TOKEN") or os.getenv("Telegram") or os.getenv("TELEGRAM") or "").strip()
-GEMINI_API_KEY = (os.getenv("GEMINI_API_KEY") or os.getenv("Gemini") or os.getenv("GEMINI") or "").strip()
+
+
+def env_value(*names: str) -> str:
+    """Read the first non-empty environment variable without exposing its value."""
+    for name in names:
+        value = os.getenv(name)
+        if value is not None and value.strip():
+            return value.strip()
+    return ""
+
+
+def build_telegram_token() -> tuple[str, str]:
+    """
+    Build the real Telegram token.
+
+    Preferred Render setup avoids ':' in dashboard values:
+      TELEGRAM_BOT_ID     = part before ':'
+      TELEGRAM_BOT_SECRET = part after ':'
+
+    A full TELEGRAM_TOKEN is still supported for environments that allow it.
+    """
+    bot_id = env_value("TELEGRAM_BOT_ID", "TELEGRAM_ID", "Telegram_ID")
+    bot_secret = env_value("TELEGRAM_BOT_SECRET", "TELEGRAM_SECRET", "Telegram_SECRET")
+
+    if bot_id or bot_secret:
+        return f"{bot_id}:{bot_secret}", "split"
+
+    full_token = env_value("TELEGRAM_TOKEN", "Telegram", "TELEGRAM")
+    if full_token:
+        return full_token, "full"
+
+    return "", "missing"
+
+
+TELEGRAM_TOKEN, TELEGRAM_TOKEN_SOURCE = build_telegram_token()
+GEMINI_API_KEY = env_value("GEMINI_API_KEY", "Gemini", "GEMINI")
 PUBLIC_BASE_URL = (os.getenv("PUBLIC_BASE_URL") or os.getenv("RENDER_EXTERNAL_URL") or "").rstrip("/")
 WEBHOOK_PATH = os.getenv("WEBHOOK_PATH", "/telegram/webhook").strip() or "/telegram/webhook"
 WEBHOOK_SECRET = os.getenv("TELEGRAM_WEBHOOK_SECRET", "").strip()
@@ -70,15 +104,37 @@ history: Dict[int, Deque[dict]] = defaultdict(lambda: deque(maxlen=MAX_HISTORY))
 locks: Dict[int, threading.Lock] = defaultdict(threading.Lock)
 
 
+def telegram_token_format_ok(token: str) -> bool:
+    """Validate the token shape locally without sending or logging the secret."""
+    if not token or token.count(":") != 1:
+        return False
+    bot_id, bot_secret = token.split(":", 1)
+    return bot_id.isdigit() and bool(bot_secret) and len(bot_secret) >= 20
+
+
 def require_config() -> None:
     missing = []
     if not TELEGRAM_TOKEN:
-        missing.append("TELEGRAM_TOKEN")
+        missing.append("TELEGRAM_BOT_ID + TELEGRAM_BOT_SECRET")
     if not GEMINI_API_KEY:
         missing.append("GEMINI_API_KEY")
     if missing:
-        raise RuntimeError("Missing required environment variables: " + ", ".join(missing))
+        raise RuntimeError("Missing required configuration: " + ", ".join(missing))
 
+    if not telegram_token_format_ok(TELEGRAM_TOKEN):
+        raise RuntimeError(
+            "Invalid Telegram token format. "
+            "Use TELEGRAM_BOT_ID and TELEGRAM_BOT_SECRET separately; "
+            "the application will restore ':' automatically."
+        )
+
+
+logger.info(
+    "Configuration check: telegram_source=%s telegram_format=%s gemini_configured=%s",
+    TELEGRAM_TOKEN_SOURCE,
+    telegram_token_format_ok(TELEGRAM_TOKEN),
+    bool(GEMINI_API_KEY),
+)
 
 require_config()
 gemini = genai.Client(api_key=GEMINI_API_KEY)
@@ -266,6 +322,8 @@ def health():
             "ok": True,
             "service": BOT_NAME,
             "telegram_configured": bool(TELEGRAM_TOKEN),
+            "telegram_token_format_valid": telegram_token_format_ok(TELEGRAM_TOKEN),
+            "telegram_token_source": TELEGRAM_TOKEN_SOURCE,
             "gemini_configured": bool(GEMINI_API_KEY),
             "time": int(time.time()),
         }
@@ -303,6 +361,8 @@ def log_requests():
 # Register webhook when Gunicorn imports this module. If a Render deploy is
 # starting before RENDER_EXTERNAL_URL is available, setting PUBLIC_BASE_URL in
 # the dashboard guarantees registration.
+#
+# Telegram token secrets are never printed; only presence/format status is logged.
 try:
     configure_bot()
 except Exception:  # noqa: BLE001
