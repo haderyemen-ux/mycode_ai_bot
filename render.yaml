@@ -9,9 +9,9 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.11
-      - key: TELEGRAM_BOT_ID
+      - key: BOT_ID
         sync: false
-      - key: TELEGRAM_BOT_SECRET
+      - key: BOT_SECRET
         sync: false
       - key: GEMINI_API_KEY
         sync: false
