@@ -35,6 +35,36 @@ The webhook endpoint is:
 
 `/telegram/webhook`
 
-## Render fallback
+## Render deployment
 
-The original Python/Flask implementation remains in `bot.py` so the repository can still be used on Render.
+The production Render service uses `bot.py` behind Gunicorn.
+
+### Required Render Environment Variables
+
+Do **not** put the Telegram token in the Render **Key** field.
+
+Use these exact Keys:
+
+- `TELEGRAM_BOT_ID` = the numeric part before the colon.
+- `TELEGRAM_BOT_SECRET` = the part after the colon.
+- `GEMINI_API_KEY` = your Gemini API key.
+
+For example, a BotFather token shaped like `1234567890:AAxxxx...` is entered as:
+
+`TELEGRAM_BOT_ID = 1234567890`
+
+`TELEGRAM_BOT_SECRET = AAxxxx...`
+
+The application rebuilds `1234567890:AAxxxx...` internally, so no Render Key contains a colon.
+
+### Render start command
+
+`gunicorn --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 120 bot:app`
+
+Save the environment variables with **Save, rebuild, and deploy** (or **Save and deploy** when the build does not need to change).
+
+The application logs only non-secret configuration status. A healthy startup should show `telegram_source=split`, `telegram_format_valid=True`, and `gemini_configured=True`.
+
+Render automatically exposes `RENDER_EXTERNAL_URL` to web services; the application uses it to register the Telegram webhook when available.
+
+Do not commit secret values to GitHub.
