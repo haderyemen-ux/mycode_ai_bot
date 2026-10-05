@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>My Code Bot</title>
+  <style>
+    :root{color-scheme:dark;--bg:#07111f;--card:#0e1c30;--line:#1d3556;--text:#eef5ff;--muted:#9eb2cc;--accent:#63a4ff;--ok:#63d38c}
+    *{box-sizing:border-box}body{margin:0;font-family:Tahoma,Arial,sans-serif;background:linear-gradient(145deg,#07111f,#0b1730);color:var(--text);min-height:100vh}
+    main{max-width:820px;margin:0 auto;padding:48px 20px}.brand{display:flex;gap:14px;align-items:center}.logo{width:56px;height:56px;border-radius:16px;display:grid;place-items:center;background:var(--accent);color:#04101f;font-size:28px;font-weight:700;box-shadow:0 10px 30px #0005}
+    h1{margin:0;font-size:30px}.sub{color:var(--muted);margin:6px 0 0}.card{margin-top:26px;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:22px;box-shadow:0 18px 50px #0003}
+    .row{display:flex;justify-content:space-between;gap:16px;padding:13px 0;border-bottom:1px solid #ffffff0c}.row:last-child{border-bottom:0}.label{color:var(--muted)}.value{font-weight:700}.ok{color:var(--ok)}
+    code{direction:ltr;display:inline-block;background:#07111f;border:1px solid var(--line);border-radius:8px;padding:3px 7px}.note{color:var(--muted);line-height:1.8}
+    a{color:#9cc5ff}
+  </style>
+</head>
+<body>
+<main>
+  <div class="brand">
+    <div class="logo">MC</div>
+    <div><h1>My Code Bot</h1><div class="sub">Telegram + Gemini — Netlify</div></div>
+  </div>
+  <section class="card">
+    <div class="row"><span class="label">الخدمة</span><span class="value ok">جاهزة للتشغيل</span></div>
+    <div class="row"><span class="label">Health</span><span class="value"><a href="/health">/health</a></span></div>
+    <div class="row"><span class="label">Telegram Webhook</span><span class="value"><code>/telegram/webhook</code></span></div>
+    <div class="row"><span class="label">إعداد Webhook</span><span class="value"><code>/setup</code></span></div>
+  </section>
+  <section class="card">
+    <p class="note">هذه الصفحة لا تعرض مفاتيح API. ضع القيم السرية في Netlify Environment Variables مع تفعيل نطاق Functions.</p>
+    <p class="note">المتغيران الأساسيان هما <code>TELEGRAM_TOKEN</code> و <code>GEMINI_API_KEY</code>. لا تحذف النقطتين <code>:</code> من توكن Telegram؛ فهي جزء من القيمة الأصلية.</p>
+  </section>
+</main>
+</body>
+</html>
