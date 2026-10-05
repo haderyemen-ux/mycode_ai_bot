@@ -120,7 +120,10 @@ def build_telegram_token() -> tuple[str, str]:
     return "", "missing"
 
 TELEGRAM_TOKEN, TELEGRAM_TOKEN_SOURCE = build_telegram_token()
-GEMINI_API_KEY = env_value("GEMINI_API_KEY", "Gemini", "GEMINI")
+GEMINI_API_KEY = (
+    read_secret_file(env_value("GEMINI_API_KEY_FILE") or "/etc/secrets/gemini_api_key.txt")
+    or env_value("GEMINI_API_KEY", "Gemini", "GEMINI")
+)
 PUBLIC_BASE_URL = (os.getenv("PUBLIC_BASE_URL") or os.getenv("RENDER_EXTERNAL_URL") or "").rstrip("/")
 WEBHOOK_PATH = os.getenv("WEBHOOK_PATH", "/telegram/webhook").strip() or "/telegram/webhook"
 WEBHOOK_SECRET = os.getenv("TELEGRAM_WEBHOOK_SECRET", "").strip()
@@ -183,7 +186,10 @@ def require_config() -> None:
             "or use TELEGRAM_BOT_TOKEN_B64."
         )
     if not GEMINI_API_KEY:
-        raise RuntimeError("GEMINI_API_KEY is missing.")
+        raise RuntimeError(
+            "Gemini API key is missing. In Render add Secret File "
+            "/etc/secrets/gemini_api_key.txt or set GEMINI_API_KEY."
+        )
 
     if not telegram_token_format_ok(TELEGRAM_TOKEN):
         raise RuntimeError(
