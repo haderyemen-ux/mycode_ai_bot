@@ -1,0 +1,15 @@
+{
+  "name": "mycode-ai-bot",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "check": "node --check netlify/functions/bot.mjs"
+  },
+  "dependencies": {
+    "@google/genai": "^1.75.0"
+  }
+}
