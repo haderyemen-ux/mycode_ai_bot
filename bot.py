@@ -38,13 +38,13 @@ def build_telegram_token() -> tuple[str, str]:
     Build the real Telegram token.
 
     Preferred Render setup avoids ':' in dashboard values:
-      TELEGRAM_BOT_ID     = part before ':'
-      TELEGRAM_BOT_SECRET = part after ':'
+      BOT_ID     = part before ':'
+      BOT_SECRET = part after ':'
 
     A full TELEGRAM_TOKEN is still supported for environments that allow it.
     """
-    bot_id = env_value("TELEGRAM_BOT_ID", "TELEGRAM_ID", "Telegram_ID")
-    bot_secret = env_value("TELEGRAM_BOT_SECRET", "TELEGRAM_SECRET", "Telegram_SECRET")
+    bot_id = env_value("BOT_ID", "TELEGRAM_BOT_ID", "TELEGRAM_ID", "Telegram_ID")
+    bot_secret = env_value("BOT_SECRET", "TELEGRAM_BOT_SECRET", "TELEGRAM_SECRET", "Telegram_SECRET")
 
     if bot_id or bot_secret:
         return f"{bot_id}:{bot_secret}", "split"
@@ -115,7 +115,7 @@ def telegram_token_format_ok(token: str) -> bool:
 def require_config() -> None:
     missing = []
     if not TELEGRAM_TOKEN:
-        missing.append("TELEGRAM_BOT_ID + TELEGRAM_BOT_SECRET")
+        missing.append("BOT_ID + BOT_SECRET")
     if not GEMINI_API_KEY:
         missing.append("GEMINI_API_KEY")
     if missing:
@@ -124,7 +124,7 @@ def require_config() -> None:
     if not telegram_token_format_ok(TELEGRAM_TOKEN):
         raise RuntimeError(
             "Invalid Telegram token format. "
-            "Use TELEGRAM_BOT_ID and TELEGRAM_BOT_SECRET separately; "
+            "Use BOT_ID and BOT_SECRET separately; "
             "the application will restore ':' automatically."
         )
 
