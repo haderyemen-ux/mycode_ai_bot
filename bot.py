@@ -48,6 +48,17 @@ def decode_base64_secret(value: str) -> str:
         return ""
 
 
+def read_secret_file(path: str) -> str:
+    """Read a Render secret file without logging its contents."""
+    if not path:
+        return ""
+    try:
+        with open(path, "r", encoding="utf-8") as handle:
+            return handle.read().strip()
+    except (OSError, UnicodeError):
+        return ""
+
+
 def build_telegram_token() -> tuple[str, str]:
     """
     Build the Telegram bot token internally.
@@ -64,6 +75,11 @@ def build_telegram_token() -> tuple[str, str]:
       TELEGRAM_BOT_ID + TELEGRAM_BOT_SECRET_B64
       TELEGRAM_TOKEN (full token)
     """
+    secret_file = env_value("TELEGRAM_BOT_TOKEN_FILE") or "/etc/secrets/telegram_token.txt"
+    file_token = read_secret_file(secret_file)
+    if file_token:
+        return file_token, "secret-file"
+
     encoded_token = env_value(
         "TELEGRAM_BOT_TOKEN_B64",
         "BOT_TOKEN_B64",
@@ -162,8 +178,9 @@ def telegram_token_format_ok(token: str) -> bool:
 def require_config() -> None:
     if not TELEGRAM_TOKEN:
         raise RuntimeError(
-            "Telegram token is missing. In Render use TELEGRAM_BOT_TOKEN_B64 "
-            "(Base64 of the complete BotFather token)."
+            "Telegram token is missing. In Render add Secret File "
+            "/etc/secrets/telegram_token.txt containing the complete BotFather token, "
+            "or use TELEGRAM_BOT_TOKEN_B64."
         )
     if not GEMINI_API_KEY:
         raise RuntimeError("GEMINI_API_KEY is missing.")
