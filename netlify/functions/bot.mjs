@@ -47,15 +47,8 @@ function json(data, status = 200) {
   });
 }
 
-function text(data, status = 200) {
-  return new Response(data, {
-    status,
-    headers: { "content-type": "text/plain; charset=utf-8" }
-  });
-}
-
 function tokenLooksValid(token) {
-  return /^\\d{6,}:\\S{20,}$/.test(token);
+  return /^\d{6,}:\S{20,}$/.test(token);
 }
 
 function getHistory(chatId) {
