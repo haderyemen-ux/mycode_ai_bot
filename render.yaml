@@ -2,12 +2,13 @@ services:
   - type: web
     name: mycode-ai-bot
     runtime: python
-    buildCommand: pip install -r requirements.txt
+    plan: free
+    buildCommand: pip install -r requirements.txt && pip check && python -m py_compile bot.py
     startCommand: gunicorn --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 120 bot:app
     healthCheckPath: /health
     envVars:
       - key: PYTHON_VERSION
-        value: 3.12.6
+        value: 3.12.11
       - key: TELEGRAM_BOT_ID
         sync: false
       - key: TELEGRAM_BOT_SECRET
