@@ -3,7 +3,7 @@ services:
     name: mycode-ai-bot
     runtime: python
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 120 app:app
+    startCommand: gunicorn --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 120 bot:app
     healthCheckPath: /health
     envVars:
       - key: PYTHON_VERSION
@@ -15,7 +15,7 @@ services:
       - key: TELEGRAM_WEBHOOK_SECRET
         generateValue: true
       - key: GEMINI_MODELS
-        value: gemini-3.8-flash,gemini-2.5-flash
+        value: gemini-3.8-flash,gemini-3.6-flash
       - key: MAX_HISTORY
         value: "12"
       - key: MAX_OUTPUT_TOKENS
