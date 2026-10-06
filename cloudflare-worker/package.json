@@ -1,0 +1,12 @@
+{
+  "name": "mycode-ai-bot-cloudflare",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "node --check src/index.js",
+    "deploy": "npx wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.56.0"
+  }
+}
