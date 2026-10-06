@@ -304,20 +304,6 @@ export default {
     }
 
     if (url.pathname === "/setup" && request.method === "GET") {
-      const setupSecret = String(env.SETUP_SECRET || "").trim();
-      const supplied =
-        request.headers.get("x-setup-key") ||
-        url.searchParams.get("key") ||
-        "";
-
-      if (!setupSecret) {
-        return json({ ok: false, error: "SETUP_SECRET is not configured" }, 503);
-      }
-
-      if (supplied !== setupSecret) {
-        return json({ ok: false, error: "Unauthorized" }, 401);
-      }
-
       try {
         const result = await configureTelegram(env, url.origin);
         return json({ ok: true, message: "Telegram webhook configured", ...result });
