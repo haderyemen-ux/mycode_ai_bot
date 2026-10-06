@@ -1,0 +1,12 @@
+{
+  "name": "mycode-ai-bot",
+  "main": "src/index.js",
+  "compatibility_date": "2026-10-02",
+  "workers_dev": true,
+  "observability": {
+    "enabled": true
+  },
+  "secrets": {
+    "required": ["TELEGRAM_TOKEN", "GEMINI_API_KEY", "SETUP_SECRET"]
+  }
+}
