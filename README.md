@@ -1,70 +1,67 @@
 # My Code Bot
 
-Telegram coding assistant powered by Gemini.
+مساعد برمجي عربي على Telegram يعمل مع Gemini.
 
-## Netlify deployment
+## مسار التشغيل الموصى به: Cloudflare Workers
 
-This repository includes a dedicated Netlify Functions implementation in:
+هذا هو المسار الأساسي للمشروع لأنه لا يحتاج إلى Python أو Gunicorn أو Render، ويعمل كـ webhook serverless. خطة Workers Free حاليًا تسمح حتى 100,000 طلب يوميًا، ولا توجد مدة خمول تجعل Worker يتوقف مثل خدمة Render Free.
 
-`netlify/functions/bot.mjs`
+المشروع موجود في:
+- cloudflare-worker/src/index.js
+- cloudflare-worker/wrangler.jsonc
+- cloudflare-worker/package.json
 
-Netlify serves the static status page from `public/index.html`.
+### أسرار Cloudflare
 
-### Required Netlify Environment Variables
+أضف هذه القيم في Worker > Variables and Secrets:
+- TELEGRAM_TOKEN = توكن BotFather الكامل، بما فيه النقطتان
+- GEMINI_API_KEY = مفتاح Gemini
+- SETUP_SECRET = قيمة عشوائية خاصة لتأمين إعداد webhook
+- TELEGRAM_WEBHOOK_SECRET = اختياري لكنه موصى به
 
-Set these in the Netlify project under Environment Variables and make sure their scope includes **Functions**:
+لا تضع أي سر في GitHub أو wrangler.jsonc.
 
-- `TELEGRAM_TOKEN` = the complete BotFather token, including the `:`.
-- `GEMINI_API_KEY` = the Gemini API key.
-- `SETUP_SECRET` = a private random string used only to authorize webhook setup.
-- `TELEGRAM_WEBHOOK_SECRET` = optional secret used by Telegram when calling the webhook.
-- `GEMINI_MODELS` = optional comma-separated models. Default: `gemini-3.8-flash,gemini-3.6-flash`.
-- `MAX_HISTORY` = optional, default `12`.
-- `MAX_OUTPUT_TOKENS` = optional, default `4096`.
-- `TEMPERATURE` = optional, default `0.25`.
+### النشر من GitHub
 
-Do not put these secrets in `netlify.toml` or source code.
+في Cloudflare:
+1. Workers & Pages
+2. Create application
+3. Import a repository
+4. اختر haderyemen-ux/mycode_ai_bot
+5. Root directory = cloudflare-worker
+6. Save and Deploy
 
-### After the first Netlify deploy
+بعد النشر أضف الأسرار، ثم افتح:
+https://YOUR-WORKER.workers.dev/setup?key=YOUR-SETUP-SECRET
 
-1. Open `/health` and verify `telegram_format_valid` and `gemini_configured` are true.
-2. Open `/setup?key=YOUR_SETUP_SECRET` once. This calls Telegram `setWebhook` and registers the bot commands.
-3. Send `/start` to the bot.
+ثم:
+https://YOUR-WORKER.workers.dev/health
 
-The webhook endpoint is:
+يجب أن تكون:
+- telegram_configured = true
+- telegram_format_valid = true
+- gemini_configured = true
 
-`/telegram/webhook`
+بعدها أرسل /start للبوت.
 
-## Render deployment
+## Render
 
-The production Render service uses `bot.py` behind Gunicorn.
+تم الإبقاء على Render كمسار بديل في:
+- bot.py
+- requirements.txt
+- Procfile
+- render.yaml
 
-### Required Render Environment Variables
+إعداد Render يستخدم Secret Files لتفادي مشكلة إدخال توكن Telegram في Environment Variables. المسار المتوقع:
+ /etc/secrets/telegram_token.txt
+و
+ /etc/secrets/gemini_api_key.txt
 
-Do **not** put the Telegram token in the Render **Key** field.
+لكن Render Free يوقف خدمة الويب بعد 15 دقيقة من عدم وجود طلبات واردة، لذلك Cloudflare Workers هو المسار الأبسط للبوت المجاني المستمر.
 
-Use these exact Keys:
+## Gemini
 
-- `TELEGRAM_BOT_ID` = the numeric part before the colon.
-- `TELEGRAM_BOT_SECRET` = the part after the colon.
-- `GEMINI_API_KEY` = your Gemini API key.
+تم تثبيت نموذج Gemini الأساسي على:
+gemini-3.8-flash
 
-For example, a BotFather token shaped like `1234567890:AAxxxx...` is entered as:
-
-`TELEGRAM_BOT_ID = 1234567890`
-
-`TELEGRAM_BOT_SECRET = AAxxxx...`
-
-The application rebuilds `1234567890:AAxxxx...` internally, so no Render Key contains a colon.
-
-### Render start command
-
-`gunicorn --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 120 bot:app`
-
-Save the environment variables with **Save, rebuild, and deploy** (or **Save and deploy** when the build does not need to change).
-
-The application logs only non-secret configuration status. A healthy startup should show `telegram_source=split`, `telegram_format_valid=True`, and `gemini_configured=True`.
-
-Render automatically exposes `RENDER_EXTERNAL_URL` to web services; the application uses it to register the Telegram webhook when available.
-
-Do not commit secret values to GitHub.
+مع دعم نماذج Gemini 3 الأخرى عند الحاجة.
