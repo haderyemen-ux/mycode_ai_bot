@@ -132,7 +132,7 @@ MAX_HISTORY = int(os.getenv("MAX_HISTORY", "12"))
 MAX_OUTPUT_TOKENS = int(os.getenv("MAX_OUTPUT_TOKENS", "4096"))
 TEMPERATURE = float(os.getenv("TEMPERATURE", "0.25"))
 MODEL_CANDIDATES = [
-    x.strip() for x in os.getenv("GEMINI_MODELS", "gemini-3.8-flash,gemini-2.5-flash").split(",") if x.strip()
+    x.strip() for x in os.getenv("GEMINI_MODELS", "gemini-3.8-flash,gemini-3.7-flash,gemini-3.6-flash").split(",") if x.strip()
 ]
 
 WELCOME = "هلا! انا بوت الكود الذكي 🤖\nارسل لي ايش تبغى اكتب لك كود"
