@@ -16,7 +16,7 @@ services:
       - key: TELEGRAM_WEBHOOK_SECRET
         generateValue: true
       - key: GEMINI_MODELS
-        value: gemini-2.5-flash,gemini-3.7-flash,gemini-3.8-flash
+        value: gemini-3.8-flash,gemini-3.7-flash,gemini-3.6-flash
       - key: MAX_HISTORY
         value: "12"
       - key: MAX_OUTPUT_TOKENS
