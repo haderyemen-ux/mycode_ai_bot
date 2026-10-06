@@ -2,66 +2,58 @@
 
 مساعد برمجي عربي على Telegram يعمل مع Gemini.
 
-## مسار التشغيل الموصى به: Cloudflare Workers
+## الحل الأساسي: Cloudflare Workers
 
-هذا هو المسار الأساسي للمشروع لأنه لا يحتاج إلى Python أو Gunicorn أو Render، ويعمل كـ webhook serverless. خطة Workers Free حاليًا تسمح حتى 100,000 طلب يوميًا، ولا توجد مدة خمول تجعل Worker يتوقف مثل خدمة Render Free.
+مسار Cloudflare هو المسار الموصى به لهذا البوت. Worker يعمل كـ webhook serverless، فلا يحتاج إلى Python أو Gunicorn أو عملية تعمل باستمرار.
 
-المشروع موجود في:
+خطة Cloudflare Workers Free الحالية تسمح حتى 100,000 طلب يوميًا، ولا يوجد فيها إيقاف بعد 15 دقيقة من الخمول مثل Render Free.
+
+### ملفات المشروع
+
 - cloudflare-worker/src/index.js
 - cloudflare-worker/wrangler.jsonc
 - cloudflare-worker/package.json
 
-### أسرار Cloudflare
+### الأسرار المطلوبة
 
-أضف هذه القيم في Worker > Variables and Secrets:
+في Cloudflare Worker > Variables and Secrets أضف فقط:
+
 - TELEGRAM_TOKEN = توكن BotFather الكامل، بما فيه النقطتان
 - GEMINI_API_KEY = مفتاح Gemini
-- SETUP_SECRET = قيمة عشوائية خاصة لتأمين إعداد webhook
-- TELEGRAM_WEBHOOK_SECRET = اختياري لكنه موصى به
 
-لا تضع أي سر في GitHub أو wrangler.jsonc.
+ولا تضع الأسرار في GitHub.
 
-### النشر من GitHub
+### النشر
 
-في Cloudflare:
-1. Workers & Pages
-2. Create application
-3. Import a repository
-4. اختر haderyemen-ux/mycode_ai_bot
-5. Root directory = cloudflare-worker
-6. Save and Deploy
+1. Cloudflare Dashboard → Workers & Pages.
+2. Create application → Import a repository.
+3. اختر المستودع haderyemen-ux/mycode_ai_bot.
+4. اجعل Root directory = cloudflare-worker.
+5. Save and Deploy.
+6. أضف السرّين السابقين.
+7. افتح عنوان Worker ثم /setup مرة واحدة.
+8. افتح /health للتحقق.
 
-بعد النشر أضف الأسرار، ثم افتح:
-https://YOUR-WORKER.workers.dev/setup?key=YOUR-SETUP-SECRET
+يجب أن يظهر:
+telegram_configured = true
+telegram_format_valid = true
+gemini_configured = true
 
-ثم:
-https://YOUR-WORKER.workers.dev/health
+بعد ذلك أرسل /start في Telegram.
 
-يجب أن تكون:
-- telegram_configured = true
-- telegram_format_valid = true
-- gemini_configured = true
+### Render
 
-بعدها أرسل /start للبوت.
-
-## Render
-
-تم الإبقاء على Render كمسار بديل في:
+تم إبقاء مسار Render كخيار بديل داخل:
 - bot.py
 - requirements.txt
 - Procfile
 - render.yaml
 
-إعداد Render يستخدم Secret Files لتفادي مشكلة إدخال توكن Telegram في Environment Variables. المسار المتوقع:
- /etc/secrets/telegram_token.txt
-و
- /etc/secrets/gemini_api_key.txt
+لكن Render Free يوقف خدمة الويب بعد 15 دقيقة بدون طلبات واردة. لذلك ليس هو المسار الأساسي لهذا البوت.
 
-لكن Render Free يوقف خدمة الويب بعد 15 دقيقة من عدم وجود طلبات واردة، لذلك Cloudflare Workers هو المسار الأبسط للبوت المجاني المستمر.
+### Gemini
 
-## Gemini
-
-تم تثبيت نموذج Gemini الأساسي على:
+النموذج الأساسي:
 gemini-3.8-flash
 
-مع دعم نماذج Gemini 3 الأخرى عند الحاجة.
+وهو نموذج متاح حاليًا في Gemini API، وله طبقة مجانية وفق صفحة التسعير الرسمية.
