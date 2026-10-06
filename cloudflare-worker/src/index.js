@@ -48,6 +48,19 @@ function getGeminiKey(env) {
 function validTelegramToken(token) {
   return /^\d{6,}:\S{20,}$/.test(token);
 }
+async function webhookSecret(env) {
+  const override = String(env.TELEGRAM_WEBHOOK_SECRET || "").trim();
+  if (override) return override;
+
+  const token = getToken(env);
+  const data = new TextEncoder().encode(token + "|mycode-ai-bot");
+  const hash = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(hash))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("")
+    .slice(0, 48);
+}
+
 
 function getHistory(chatId) {
   if (!histories.has(chatId)) histories.set(chatId, []);
@@ -255,8 +268,8 @@ async function configureTelegram(env, workerUrl) {
     drop_pending_updates: true,
   };
 
-  const webhookSecret = String(env.TELEGRAM_WEBHOOK_SECRET || "").trim();
-  if (webhookSecret) payload.secret_token = webhookSecret;
+  const webhookToken = await webhookSecret(env);
+  payload.secret_token = webhookToken;
 
   await telegram(env, "setWebhook", payload);
 
@@ -286,7 +299,7 @@ export default {
         telegram_configured: Boolean(token),
         telegram_format_valid: validTelegramToken(token),
         gemini_configured: Boolean(getGeminiKey(env)),
-        webhook_secret_configured: Boolean(String(env.TELEGRAM_WEBHOOK_SECRET || "").trim()),
+        webhook_secret_configured: Boolean(getToken(env)),
       });
     }
 
@@ -318,12 +331,10 @@ export default {
     }
 
     if (url.pathname === "/telegram/webhook" && request.method === "POST") {
-      const configuredSecret = String(env.TELEGRAM_WEBHOOK_SECRET || "").trim();
-      if (configuredSecret) {
-        const supplied = request.headers.get("X-Telegram-Bot-Api-Secret-Token") || "";
-        if (supplied !== configuredSecret) {
-          return json({ ok: false }, 403);
-        }
+      const configuredSecret = await webhookSecret(env);
+      const supplied = request.headers.get("X-Telegram-Bot-Api-Secret-Token") || "";
+      if (supplied !== configuredSecret) {
+        return json({ ok: false }, 403);
       }
 
       let update;
