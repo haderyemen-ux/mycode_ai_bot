@@ -1,23 +1,45 @@
 # My Code Bot — Cloudflare Worker
 
-Stable serverless deployment path for My Code Bot.
+هذا هو مسار التشغيل الأساسي للبوت.
 
-Required secrets:
-- TELEGRAM_TOKEN: complete BotFather token, including the colon.
-- GEMINI_API_KEY: Gemini API key.
-- SETUP_SECRET: random value used only to authorize webhook setup.
-- TELEGRAM_WEBHOOK_SECRET: optional but recommended random value for webhook validation.
+## الأسرار المطلوبة
 
-Cloudflare stores Worker secrets encrypted and exposes them only at runtime.
+في Worker > Variables and Secrets أضف:
 
-Cloudflare deployment:
-1. Open Workers & Pages.
-2. Create application, then Import a repository.
-3. Select the GitHub repository haderyemen-ux/mycode_ai_bot.
-4. Set Root directory to cloudflare-worker.
-5. Save and Deploy.
-6. Add the secrets under the Worker Variables and Secrets settings.
-7. Open /setup?key=YOUR-SETUP-SECRET on the Worker once.
-8. Open /health and verify telegram_configured=true, telegram_format_valid=true, gemini_configured=true.
+- TELEGRAM_TOKEN: توكن BotFather الكامل، بما فيه :
+- GEMINI_API_KEY: مفتاح Gemini
 
-The Worker uses direct HTTPS calls to Telegram Bot API and Gemini REST API, so there is no Python process, Gunicorn process, or SDK runtime dependency.
+لا تضع الأسرار في GitHub أو wrangler.jsonc.
+
+يمكن إضافة TELEGRAM_WEBHOOK_SECRET اختياريًا، لكن البرنامج ينشئ سر webhook تلقائيًا من توكن Telegram عند عدم وجوده.
+
+## النشر
+
+في Cloudflare:
+1. Workers & Pages
+2. Create application
+3. Import a repository
+4. اختر haderyemen-ux/mycode_ai_bot
+5. Root directory = cloudflare-worker
+6. Save and Deploy
+
+بعد نجاح أول Deploy، أضف السرّين ثم افتح:
+https://YOUR-WORKER.workers.dev/setup
+
+هذا يسجل أو يعيد تسجيل webhook في Telegram تلقائيًا.
+
+ثم افتح:
+https://YOUR-WORKER.workers.dev/health
+
+يجب أن ترى:
+- telegram_configured: true
+- telegram_format_valid: true
+- gemini_configured: true
+
+بعدها أرسل /start للبوت.
+
+## لماذا هذا المسار؟
+
+Cloudflare Workers Free حاليًا يسمح حتى 100,000 طلب يوميًا ولا يوقف Worker بعد 15 دقيقة من الخمول. كما أن قيم الأسرار تُخزن كـ Secrets مشفرة وتصل للتطبيق وقت التشغيل.
+
+Gemini 3.8 Flash هو النموذج الأساسي المستخدم في Worker.
